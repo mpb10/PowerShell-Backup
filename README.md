@@ -38,7 +38,7 @@ To uninstall these scripts, delete the Backup Script folders located at `C:\User
 
 # USAGE
 
-Run either the desktop shortcut or the Start Menu shortcut. At the main menu, choose option `1` to choose the folder to be backed up and the folder to which the backup is to be saved. By default the script will backup the user's `Documents` folder to `E:\Backups`. Make sure you choose the proper drive when backing up a folder. Alternatively, users can choose option `2` at the main menu to backup folders listed in the `backuplist.txt` file which is found at `C:\Users\%USERNAME%\Backup Script`.
+Run either the desktop shortcut or the Start Menu shortcut. At the main menu, choose option `1` to select the folder to be backed up and the folder to which the backup is to be saved. By default the script will backup the user's `Documents` folder to `E:\Backups`. Make sure you choose the proper drive when backing up a folder. Alternatively, users can choose option `2` at the main menu to backup folders listed in the `backuplist.txt` file which is found at `C:\Users\%USERNAME%\Backup Script`.
 
 #
 
