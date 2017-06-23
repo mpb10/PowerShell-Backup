@@ -46,9 +46,9 @@ Function Check7Zip {
 			$Output = $ENV:USERPROFILE + "\Backup Script\7z1604-x86.exe"
 		}
 		(New-Object System.Net.WebClient).DownloadFile($URL, $Output)
-		$Output = $Output.Replace(' ','` ')
-		Start-Process $Output -Wait
-		$Output = $Output.Replace('`','')
+		#$Output = $Output.Replace(' ','` ')
+		Start-Process "$Output" -Wait
+		#$Output = $Output.Replace('`','')
 		Remove-Item -Path "$Output"
 	}
 }
