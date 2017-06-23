@@ -47,7 +47,7 @@ Function Check7Zip {
 		}
 		(New-Object System.Net.WebClient).DownloadFile($URL, $Output)
 		$Output = $Output.Replace(' ','` ')
-		$Output | Out-Null
+		Invoke-Item $Output | Out-Null
 		$Output = $Output.Replace('`','')
 		Remove-Item -Path "$Output"
 	}
