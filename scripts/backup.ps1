@@ -80,7 +80,7 @@ Function MainMenu {
 	While ($MenuOption -ne 1 -and $MenuOption -ne 0) {
 		Clear-Host
 		Write-Host "================================================================"
-		Write-Host "                       Backup Script v1.1                       " -ForegroundColor "Yellow"
+		Write-Host "                      Backup Script v1.1.0                      " -ForegroundColor "Yellow"
 		Write-Host "================================================================"
 		Write-Host ""
 		Write-Host "Please select an option:" -ForegroundColor "Yellow"
