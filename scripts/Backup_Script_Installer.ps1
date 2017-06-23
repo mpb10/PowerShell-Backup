@@ -45,8 +45,8 @@ Function Check7Zip {
 			$URL = "http://www.7-zip.org/a/7z1604.exe"
 			$Output = $ENV:USERPROFILE + "\Backup Script\7z1604-x86.exe"
 		}
-		$Output = $Output.Replace(' ','` ')
 		(New-Object System.Net.WebClient).DownloadFile($URL, $Output)
+		$Output = $Output.Replace(' ','` ')
 		Remove-Item -Path "$Output"
 	}
 }
