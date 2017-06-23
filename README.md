@@ -40,13 +40,9 @@ To uninstall these scripts, delete the Backup Script folders located at `C:\User
 
 Run either the desktop shortcut or the Start Menu shortcut. Choose option `1` to choose the folder to be backed up and the folder to which the backup is to be saved. By default the script will backup the user's `Documents` folder to `E:\Backups`. Make sure you choose the proper drive when backing up a folder. Alternatively, users can choose option `2` at the main menu to backup folders listed in the `backuplist.txt` file which is found at `C:\Users\%USERNAME%\Backup Script`.
 
-**New in version 1.1.0**, users can save a list of folders to be backed up in the text file "C:\Users\%USERNAME%\Backup Script\backuplist.txt". One line at a time, list the path of each folder that is to be backed up, with the first line being the path of where to save the backups. Once the `backuplist.txt` file is set, choose option 2 on the main menu. Confirm that the information is correct and then begin the process.
-
 #
 
-**New in version 1.1.0**, users can list playlists in the `audioplaylist.txt` and `videoplaylist.txt` files located in `C:\Users\%USERNAME%\Youtube-dl`. List any playlist URL's one line at a time that you would like to download video from in the `videoplaylist.txt` file. The same goes for the `audioplaylist.txt` file. To download from these files, choose option `3` in the main menu or use the -FromFiles parameter switch if calling the script from the command line. Currently, playlists downloaded form the video playlist will be automatically converted to .webm
-
-**New in version 1.2.0**, users can convert downloaded videos to other formats using  ffmpeg options which can be modified in option `4` of the main menu, "Settings". Only videos being downloaded will be converted, not audio downloads. This feature has not yet been implemented into the parameters that can be passed to the script.
+**New in version 1.1.0**, users can save a list of folders to be backed up in the text file `C:\Users\%USERNAME%\Backup Script\backuplist.txt`. One line at a time, list the path of each folder that is to be backed up, with the first line being the path of where to save the backups. Once the `backuplist.txt` file is set, choose option 2 on the main menu. Confirm that the information is correct and then begin the process.
 
 #
 
