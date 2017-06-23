@@ -62,8 +62,6 @@ Else {
 	Write-Host "PowerShell is up to date."
 }
 
-Check7Zip
-
 Write-Host "Copying install files ..."
 
 Copy-Item ".\scripts\backup.ps1" -Destination "$ScriptsFolder"
@@ -71,6 +69,8 @@ Copy-Item ".\scripts\Backup Script.lnk" -Destination "$ScriptsFolder"
 Copy-Item ".\scripts\Backup Script.lnk" -Destination "$DesktopFolder"
 Copy-Item ".\scripts\Backup Script.lnk" -Destination "$StartFolder"
 Copy-Item ".\README.md" -Destination "$SettingsFolder"
+
+Check7Zip
 
 Write-Host "`nInstallation complete.`n" -ForegroundColor "Yellow"
 
