@@ -33,7 +33,7 @@ Make sure you don't delete any of the .txt files!
 
 #
 
-To uninstall these scripts, delete the Backup Script folders located at `C:\Users\%USERNAME%\Backup Script` and `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Backup Script`, as well as the desktop shortcut.
+To uninstall this script, delete the Backup Script folders located at `C:\Users\%USERNAME%\Backup Script` and `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Backup Script`, as well as the desktop shortcut.
 
 
 # USAGE
