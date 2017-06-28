@@ -46,7 +46,7 @@ Run either the desktop shortcut or the Start Menu shortcut. At the main menu, ch
 
 #
 
-For advanced users, the backup.ps1 script, which is found in the folder `C:\Users\%USERNAME%\Backup Script\scripts`, can be passed parameters so that this script can be used in conjunction with other scripts or forms of automation. Make sure you have `7z.exe` added to your PATH.
+For advanced users, the `backup.ps1` script, which is found in the folder `C:\Users\%USERNAME%\Backup Script\scripts`, can be passed parameters so that this script can be used in conjunction with other scripts or forms of automation. Make sure you have `7z.exe` added to your PATH.
 
 **backup.ps1's parameters are as followed:**
 
