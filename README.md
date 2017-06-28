@@ -60,8 +60,8 @@ For advanced users, the backup.ps1 script, which is found in the folder `C:\User
 # CHANGE LOG
 
 	1.1.1 	June 23rd, 2017
-    		Uploaded to Github.
-    		Condensed installer to one PowerShell script
+		Uploaded to Github
+		Condensed installer to one PowerShell script
 		Edited documentation
     
 	1.1.0	June 12th, 2017
