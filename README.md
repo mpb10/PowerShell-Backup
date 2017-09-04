@@ -20,11 +20,13 @@ A PowerShell script used to backup files.
 
 # INSTALLATION
 
-This script requires Windows PowerShell and 7-Zip to function. PowerShell comes pre-installed with Windows 10 but otherwise can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=50395. 7-Zip can be downloaded here: http://www.7-zip.org/download.html
+**Script download link:** https://github.com/ForestFrog/PowerShell-Backup-Script/archive/master.zip
 
-**Download PowerShell-Backup-Script script here:** https://github.com/ForestFrog/PowerShell-Backup-Script/archive/master.zip
+Note: This script requires Windows PowerShell and 7-Zip to function. PowerShell comes pre-installed with Windows 10 but otherwise can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=50395. 7-Zip can be downloaded here: http://www.7-zip.org/download.html
 
-Download the project .zip file, extract it to a folder, and run the `Backup_Installer.ps1` shortcut. The script will be installed to the folder `C:\Users\%USERNAME%\Backup Script`. A desktop shortcut and a Start Menu shortcut will be created. Run either of these to use the script. 
+Make sure your ExecutionPolicy is properly set by opening a PowerShell window with administrator privileges and typing `Set-ExecutionPolicy RemoteSigned`.
+
+**To Install:** Download the project .zip file, extract it to a folder, and run the `Backup_Installer.ps1` shortcut. The script will be installed to the folder `C:\Users\%USERNAME%\Backup Script`. A desktop shortcut and a Start Menu shortcut will be created. Run either of these to use the script. 
 
 To update the script, delete the following folder, download the new version and install it:
 
