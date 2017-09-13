@@ -1,10 +1,10 @@
 # PowerShell-Backup-Script
-https://github.com/ForestFrog/PowerShell-Backup-Script
+https://github.com/mpb10/PowerShell-Backup-Script
 
 A PowerShell script used to backup files.
 
 
-**Scripts written by ForestFrog**
+**Author: Matt Bittner**
 
 **June 23th, 2017**
 
@@ -20,7 +20,7 @@ A PowerShell script used to backup files.
 
 # INSTALLATION
 
-**Script download link:** https://github.com/ForestFrog/PowerShell-Backup-Script/archive/master.zip
+**Script download link:** https://github.com/mpb10/PowerShell-Backup-Script/archive/master.zip
 
 Note: This script requires Windows PowerShell and 7-Zip to function. PowerShell comes pre-installed with Windows 10 but otherwise can be downloaded here: https://www.microsoft.com/en-us/download/details.aspx?id=50395. 7-Zip can be downloaded here: http://www.7-zip.org/download.html
 
