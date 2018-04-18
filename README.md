@@ -1,3 +1,7 @@
+
+**DO NOT USE:** Version 2.0 is in progress and will install and work much better.
+
+
 # PowerShell-Backup-Script
 https://github.com/mpb10/PowerShell-Backup-Script
 
