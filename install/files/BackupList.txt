@@ -6,8 +6,8 @@
 # Lines starting with '#' are commented out and will be ignored by the script.
 
 [Backup From]
-# C:\Users\%USERNAME%\Documents
-# C:\Users\%USERNAME%\Downloads
+# C:\Users\%USERNAME%\Documents      (example path)
+# C:\Users\%USERNAME%\Downloads      (example path)
 
 [Backup To]
-# E:\Backups
+# E:\Backups      (example path)
