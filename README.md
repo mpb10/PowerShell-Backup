@@ -6,7 +6,7 @@ A PowerShell script used to backup files.
 
 **Author: Matt Bittner**
 
-**April 27th, 2018**
+**May 9th, 2018**
 
 **v2.0.0**
 
