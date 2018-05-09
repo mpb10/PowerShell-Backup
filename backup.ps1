@@ -52,7 +52,7 @@ Param (
 # ======================================================================================================= #
 
 $CheckForUpdates = $True
-
+$Verbose7Zip = $True
 
 
 
@@ -82,7 +82,7 @@ $CurrentDate = Get-Date -UFormat "%m-%d-%Y"
 
 # Function for simulating the 'pause' command of the Windows command line.
 Function PauseScript {
-	If (($PSBoundParameters.Count) -eq 0) {
+	If ((($PSBoundParameters).Count).ToInt32 -eq 0) {
 		Write-Host "`nPress any key to continue ...`n" -ForegroundColor "Gray"
 		$Wait = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
 	}
@@ -226,23 +226,23 @@ Function UpdateScript {
 Function BackupFolder {
 	Param (
 		[Parameter(Mandatory)]
-		[String]$Input,
+		[String]$InputFolder,
 		[Parameter(Mandatory)]
-		[String]$Output
+		[String]$OutputFolder
 	)
 	
-	If ((Test-Path "$Input" -PathType Container) -eq $False) {
+	If ((Test-Path "$InputFolder" -PathType Container) -eq $False) {
 		Write-Host "`n[ERROR] Provided input path does not exist or is not a folder." -ForegroundColor "Red" -BackgroundColor "Black"
 		PauseScript
 		Return
 	}
 	
-	If ((Test-Path "$Output" -PathType Container) -eq $False) {
-		Write-Host "`n[WARNING] The provided output folder of ""$Output"" does not exist."
+	If ((Test-Path "$OutputFolder" -PathType Container) -eq $False) {
+		Write-Host "`n[WARNING] The provided output folder of ""$OutputFolder"" does not exist."
 		$MenuOption = Read-Host "          Create this folder? [y/n]"
 		
 		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
-			New-Item -Type Directory -Path "$Output" | Out-Null
+			New-Item -Type Directory -Path "$OutputFolder" | Out-Null
 		}
 		Else {
 			Write-Host "`n[ERROR] No valid output folder was provided." -ForegroundColor "Red" -BackgroundColor "Black"
@@ -251,7 +251,7 @@ Function BackupFolder {
 		}
 	}
 	
-	$InputBottom = $Input.Replace(" ", "_") | Split-Path -Leaf
+	$InputFolderBottom = $InputFolder.Replace(" ", "_") | Split-Path -Leaf
 	
 	If (($OutputFormat.Trim()) -like "*7z") {
 		$FileFormat = ".7z"
@@ -266,10 +266,25 @@ Function BackupFolder {
 		$FileFormat = ".zip"
 	}
 	
-	Write-Host "`nCompressing folder: ""$Input""`nCompressing to:     ""$Output""`n"
+	$OutputFileName = "$OutputFolder\$InputFolderBottom" + "_" + "$CurrentDate$FileFormat"
 	
-	$7zipCommand = "7z a ""$Output\$InputBottom_$CurrentDate$FileFormat"" ""$Input\*"""
-	Invoke-Expression "$7zipCommand"
+	$Counter = 0
+	While ((Test-Path "$OutputFileName") -eq $True) {
+		$Counter++
+		$OutputFileName = "$OutputFolder\$InputFolderBottom" + "_" + "$CurrentDate ($Counter)$FileFormat"
+	}	
+	
+	Write-Host "`nCompressing folder: ""$InputFolder""`nCompressing to:     ""$OutputFileName""`n" -ForegroundColor "Green"
+	
+	$7ZipCommand = "7za a ""$OutputFileName"" ""$InputFolder\*"""
+	Write-Verbose "7-Zip command: $7zipCommand"
+	
+	If ($Verbose7Zip -eq $True) {
+		Invoke-Expression "$7ZipCommand"
+	}
+	Else {
+		Invoke-Expression "$7ZipCommand" | Out-Null
+	}
 }
 
 
@@ -277,9 +292,45 @@ Function BackupFolder {
 Function BackupFromFile {
 	Param (
 		[Parameter(Mandatory)]
-		[String]$Input
+		[String]$InputFile
 	)
 	
+	If ((Test-Path "$InputFile") -eq $False) {
+		Write-Host "`n[ERROR] Provided input file does not exist." -ForegroundColor "Red" -BackgroundColor "Black"
+		PauseScript
+		Return
+	}
+	
+	$BackupListArray = Get-Content "$InputFile" | Where-Object {$_.Trim() -ne "" -and $_.Trim() -notlike "#*"}
+	
+	$BackupFromArray = $BackupListArray | Select-Object -Index (($BackupListArray.IndexOf("[Backup From]".Trim()))..($BackupListArray.IndexOf("[Backup To]".Trim())-1))
+	$BackupToArray = $BackupListArray | Select-Object -Index (($BackupListArray.IndexOf("[Backup To]".Trim()))..($BackupListArray.Count - 1))
+	
+	If ($BackupToArray.Count -eq 1) {
+		Write-Host "[ERROR] No output folder paths listed under '[Backup To]'." -ForegroundColor "Red" -ForegroundColor "Black"
+		PauseScript
+		Return
+	}
+	ElseIf ($BackupToArray.Count -gt 1) {
+		$BackupToArray = @($BackupToArray | Where-Object {$_ -ne $BackupToArray[0]})
+	}
+	
+	If ($BackupFromArray.Count -gt 1) {
+		Write-Host "`nStarting batch job from file: ""$InputFile""" -ForegroundColor "Green"
+		
+		$BackupFromArray | Where-Object {$_ -ne $BackupFromArray[0]} | ForEach-Object {
+			$Counter = 0
+			While ($BackupToArray.Count -gt $Counter) {
+				BackupFolder "$_" $BackupToArray[$Counter]
+				$Counter++
+			}
+		}
+	}
+	Else {
+		Write-Host "[ERROR] No input folder paths listed under '[Backup From]'." -ForegroundColor "Red" -ForegroundColor "Black"
+		PauseScript
+		Return
+	}
 }
 
 
@@ -299,26 +350,26 @@ Function CommandLineMode {
 	}
 	
 	If ($BackupList -eq $True -and ($OutputPath.Length) -gt 0) {
-		Write-Host "`n[ERROR]: The parameter -BackupList can't be used with -InputPath or -OutputPath.`n" -ForegroundColor "Red" -BackgroundColor "Black"
+		Write-Host "`n[ERROR]: The parameter -BackupList can't be used with -OutputPath.`n" -ForegroundColor "Red" -BackgroundColor "Black"
 	}
 	ElseIf ($BackupList -eq $True -and ($InputPath.Length) -gt 0) {
 		BackupFromFile "$InputPath"
-		Write-Host "`nBackups complete." -ForegroundColor "Yellow"
+		Write-Host "`nBackups complete.`n" -ForegroundColor "Yellow"
 	}
 	ElseIf ($BackupList -eq $True) {
 		BackupFromFile "$BackupListFile"
-		Write-Host "`nBackups complete." -ForegroundColor "Yellow"
+		Write-Host "`nBackups complete.`n" -ForegroundColor "Yellow"
 	}
 	ElseIf (($InputPath.Length) -gt 0 -and ($OutputPath.Length) -gt 0) {
 		BackupFolder "$InputPath" "$OutputPath"
-		Write-Host "`nBackup complete. Backed up to: ""$OutputPath""" -ForegroundColor "Yellow"
+		Write-Host "`nBackup complete. Backed up to: ""$OutputPath""`n" -ForegroundColor "Yellow"
 	}
 	ElseIf (($InputPath.Length) -gt 0) {
 		BackupFolder "$InputPath" "$PSScriptRoot"
-		Write-Host "`nBackup complete. Backed up to: ""$PSScriptRoot""" -ForegroundColor "Yellow"
+		Write-Host "`nBackup complete. Backed up to: ""$PSScriptRoot""`n" -ForegroundColor "Yellow"
 	}
 	Else {
-		Write-Host "`n[ERROR]: Invalid parameters provided." -ForegroundColor "Red" -BackgroundColor "Black"
+		Write-Host "`n[ERROR]: Invalid parameters provided.`n" -ForegroundColor "Red" -BackgroundColor "Black"
 	}
 	
 	Exit
@@ -380,6 +431,7 @@ Else {
 
 Write-Host "End of Script"
 PauseScript
+Exit
 
 
 # ======================================================================================================= #
