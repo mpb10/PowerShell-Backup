@@ -7,6 +7,7 @@
 
 [Backup From]
 # C:\Users\%USERNAME%\Documents
+# C:\Users\%USERNAME%\Downloads
 
 [Backup To]
 # E:\Backups
