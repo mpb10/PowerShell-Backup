@@ -25,7 +25,7 @@
 .NOTES
 	Requires Windows 7 or higher and PowerShell version 5.0 or greater.
 	Author: mpb10
-	Updated: November 27th, 2017
+	Updated: May 9th, 2018
 	Version: 2.0.0
 .LINK 
 	https://github.com/mpb10/PowerShell-Backup-Script
@@ -70,6 +70,8 @@ $StartFolder = $ENV:APPDATA + "\Microsoft\Windows\Start Menu\Programs\PowerShell
 [Version]$RunningVersion = '2.0.0'
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 $CurrentDate = Get-Date -UFormat "%m-%d-%Y"
+$BackupFolderStatus = $True
+$BackupFromFileStatus = $True
 
 
 
@@ -149,7 +151,7 @@ Function InstallScript {
 	Else {
 		$MenuOption = Read-Host "`nInstall PowerShell-Backup to ""$InstallLocation""? [y/n]"
 		
-		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
+		If ($MenuOption.Trim() -like "y" -or $MenuOption.Trim() -like "yes") {
 			Write-Host "`nInstalling to ""$InstallLocation"" ..."
 
 			$Script:RootFolder = $InstallLocation
@@ -187,7 +189,7 @@ Function UpdateScript {
 		Write-Host "`nA new version of PowerShell-Backup is available: v$NewestVersion" -ForegroundColor "Yellow"
 		$MenuOption = Read-Host "`nUpdate to this version? [y/n]"
 		
-		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
+		If ($MenuOption.Trim() -like "y" -or $MenuOption.Trim() -like "yes") {
 			DownloadFile "http://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/backup.ps1" "$RootFolder\backup.ps1"
 			
 			If ($PSScriptRoot -eq "$InstallLocation") {
@@ -230,10 +232,12 @@ Function BackupFolder {
 		[Parameter(Mandatory)]
 		[String]$OutputFolder
 	)
+	$Script:BackupFolderStatus = $True
 	
 	If ((Test-Path "$InputFolder" -PathType Container) -eq $False) {
 		Write-Host "`n[ERROR] Provided input path does not exist or is not a folder." -ForegroundColor "Red" -BackgroundColor "Black"
 		PauseScript
+		$Script:BackupFolderStatus = $False
 		Return
 	}
 	
@@ -241,12 +245,13 @@ Function BackupFolder {
 		Write-Host "`n[WARNING] The provided output folder of ""$OutputFolder"" does not exist."
 		$MenuOption = Read-Host "          Create this folder? [y/n]"
 		
-		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
+		If ($MenuOption.Trim() -like "y" -or $MenuOption.Trim() -like "yes") {
 			New-Item -Type Directory -Path "$OutputFolder" | Out-Null
 		}
 		Else {
 			Write-Host "`n[ERROR] No valid output folder was provided." -ForegroundColor "Red" -BackgroundColor "Black"
 			PauseScript
+			$Script:BackupFolderStatus = $False
 			Return
 		}
 	}
@@ -274,7 +279,7 @@ Function BackupFolder {
 		$OutputFileName = "$OutputFolder\$InputFolderBottom" + "_" + "$CurrentDate ($Counter)$FileFormat"
 	}	
 	
-	Write-Host "`nCompressing folder: ""$InputFolder""`nCompressing to:     ""$OutputFileName""`n" -ForegroundColor "Green"
+	Write-Host "`nCompressing folder: ""$InputFolder""`nCompressing to:     ""$OutputFileName""" -ForegroundColor "Green"
 	
 	$7ZipCommand = "7za a ""$OutputFileName"" ""$InputFolder\*"""
 	Write-Verbose "7-Zip command: $7zipCommand"
@@ -294,10 +299,12 @@ Function BackupFromFile {
 		[Parameter(Mandatory)]
 		[String]$InputFile
 	)
+	$Script:BackupFromFileStatus = $True
 	
 	If ((Test-Path "$InputFile") -eq $False) {
 		Write-Host "`n[ERROR] Provided input file does not exist." -ForegroundColor "Red" -BackgroundColor "Black"
 		PauseScript
+		$Script:BackupFromFileStatus = $False
 		Return
 	}
 	
@@ -307,8 +314,9 @@ Function BackupFromFile {
 	$BackupToArray = $BackupListArray | Select-Object -Index (($BackupListArray.IndexOf("[Backup To]".Trim()))..($BackupListArray.Count - 1))
 	
 	If ($BackupToArray.Count -eq 1) {
-		Write-Host "[ERROR] No output folder paths listed under '[Backup To]'." -ForegroundColor "Red" -ForegroundColor "Black"
+		Write-Host "`n[ERROR] No output folder paths listed under '[Backup To]'." -ForegroundColor "Red" -BackgroundColor "Black"
 		PauseScript
+		$Script:BackupFromFileStatus = $False
 		Return
 	}
 	ElseIf ($BackupToArray.Count -gt 1) {
@@ -327,8 +335,9 @@ Function BackupFromFile {
 		}
 	}
 	Else {
-		Write-Host "[ERROR] No input folder paths listed under '[Backup From]'." -ForegroundColor "Red" -ForegroundColor "Black"
+		Write-Host "`n[ERROR] No input folder paths listed under '[Backup From]'." -ForegroundColor "Red" -BackgroundColor "Black"
 		PauseScript
+		$Script:BackupFromFileStatus = $False
 		Return
 	}
 }
@@ -345,28 +354,32 @@ Function CommandLineMode {
 		Exit
 	}
 	
-	If (($OutputPath.Length) -gt 0 -and (Test-Path "$OutputPath") -eq $False) {
-		New-Item -Type directory -Path "$OutputPath" | Out-Null
-	}
-	
 	If ($BackupList -eq $True -and ($OutputPath.Length) -gt 0) {
 		Write-Host "`n[ERROR]: The parameter -BackupList can't be used with -OutputPath.`n" -ForegroundColor "Red" -BackgroundColor "Black"
 	}
 	ElseIf ($BackupList -eq $True -and ($InputPath.Length) -gt 0) {
 		BackupFromFile "$InputPath"
-		Write-Host "`nBackups complete.`n" -ForegroundColor "Yellow"
+		If ($BackupFromFileStatus -eq $True) {
+			Write-Host "`nBackups complete.`n" -ForegroundColor "Yellow"
+		}
 	}
 	ElseIf ($BackupList -eq $True) {
 		BackupFromFile "$BackupListFile"
-		Write-Host "`nBackups complete.`n" -ForegroundColor "Yellow"
+		If ($BackupFromFileStatus -eq $True) {
+			Write-Host "`nBackups complete.`n" -ForegroundColor "Yellow"
+		}
 	}
 	ElseIf (($InputPath.Length) -gt 0 -and ($OutputPath.Length) -gt 0) {
 		BackupFolder "$InputPath" "$OutputPath"
-		Write-Host "`nBackup complete. Backed up to: ""$OutputPath""`n" -ForegroundColor "Yellow"
+		If ($BackupFolderStatus -eq $True) {
+			Write-Host "`nBackup complete. Backed up to: ""$OutputPath""`n" -ForegroundColor "Yellow"
+		}
 	}
 	ElseIf (($InputPath.Length) -gt 0) {
 		BackupFolder "$InputPath" "$PSScriptRoot"
-		Write-Host "`nBackup complete. Backed up to: ""$PSScriptRoot""`n" -ForegroundColor "Yellow"
+		If ($BackupFolderStatus -eq $True) {
+			Write-Host "`nBackup complete. Backed up to: ""$PSScriptRoot""`n" -ForegroundColor "Yellow"
+		}
 	}
 	Else {
 		Write-Host "`n[ERROR]: Invalid parameters provided.`n" -ForegroundColor "Red" -BackgroundColor "Black"
