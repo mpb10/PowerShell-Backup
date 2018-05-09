@@ -1,0 +1,12 @@
+# This file specifies the locations of where to backup folders from and to. Under the
+# '[Backup From]' section, list the paths of the folders you wish to have backed up,
+# and under the '[Backup To]' section, list the paths of the folders where you wish
+# to save the backups. List these folder paths one line at a time.
+
+# Lines starting with '#' are commented out and will be ignored by the script.
+
+[Backup From]
+# C:\Users\%USERNAME%\Documents
+
+[Backup To]
+# E:\Backups
