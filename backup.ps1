@@ -1,49 +1,9 @@
-<#PSScriptInfo 
-
-.VERSION
-	1.2.0 
-
-.GUID  
-
-.AUTHOR
-	mpb10
-
-.COMPANYNAME 
-
-.COPYRIGHT 
-
-.TAGS 
-
-.LICENSEURI
-	https://github.com/mpb10/PowerShell-Backup-Script/blob/master/LICENSE
-
-.PROJECTURI
-	https://github.com/mpb10/PowerShell-Backup-Script
-
-.ICONURI 
-
-.EXTERNALMODULEDEPENDENCIES 
-
-.REQUIREDSCRIPTS 
-
-.EXTERNALSCRIPTDEPENDENCIES 
-	http://www.7-zip.org/
-
-.RELEASENOTES
-	1.2.0	27-Nov-2017 - Updated and cleaned up code.
-#>
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
 <#
 .SYNOPSIS 
 	Automates the process of creating .zip backup files of user specified folders.
 	
 .DESCRIPTION 
-	This script uses the 7-zip archive utility to create .zip archive files of user specified folders. This script can be ran via the command line using parameters, or it can be ran without parameters to use its GUI. See README.md for more information.
+	This script uses the 7-zip archive utility to create .zip archive files of user specified folders. This script can be ran via the command line using parameters, or it can be ran without parameters to use its GUI.
 	
 .PARAMETER InputPath 
 	Specify the folder that is to be backed up.
@@ -52,407 +12,381 @@
 .PARAMETER BackupList
 	Backup folders listed in the backuplist.txt file. The first line is the folder to which the backups will be saved.
 
-.EXAMPLE 
-	C:\Users\%USERNAME%\Backup Script\scripts\backup.ps1
+.EXAMPLE
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1
 	Runs the script in GUI mode.
-.EXAMPLE 
-	C:\Users\%USERNAME%\Backup Script\scripts\backup.ps1 -InputPath "C:\Users\mpb10\Documents" -OutputPath "E:\Backups"
+.EXAMPLE
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -InputPath "C:\Users\mpb10\Documents" -OutputPath "E:\Backups"
 	Backups the user mpb10's Documents folder to "E:\Backups".
-.EXAMPLE 
-	C:\Users\%USERNAME%\Backup Script\scripts\backup.ps1 -BackupList
-	Backs up the folders listed in "C:\Users\%USERNAME%\Backup Script\backuplist.txt" to the folder listed on the first line of the file.
+.EXAMPLE
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -BackupList -OutputPath "E:\Backups"
+	Backs up the folders listed in "C:\Users\%USERNAME%\Scripts\Backup-Script\config\backuplist.txt" to "E:\Backups".
 
-.NOTES 
-	Requires Windows 7 or higher 
+.NOTES
+	Requires Windows 7 or higher and PowerShell version 5.0 or greater.
 	Author: mpb10
 	Updated: November 27th, 2017
-	Version: 1.2.0
-
+	Version: 2.0.0
 .LINK 
 	https://github.com/mpb10/PowerShell-Backup-Script
 #>
 
-
 # ======================================================================================================= #
 # ======================================================================================================= #
 
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-
-Param(
+Param (
 	[String]$InputPath,
 	[String]$OutputPath,
-	[Switch]$BackupList
+	[String]$OutputFormat,
+	[Switch]$BackupList,
+	[Switch]$Install,
+	[Switch]$UpdateScript
 )
 
 
+# ======================================================================================================= #
+# ======================================================================================================= #
+#
+# SCRIPT SETTINGS
+#
+# ======================================================================================================= #
+
+$CheckForUpdates = $True
+
+
+
+
 
 # ======================================================================================================= #
 # ======================================================================================================= #
+#
+# LIBRARY
+#
+# ======================================================================================================= #
+
+$InstallLocation = $ENV:USERPROFILE + "\Scripts\PowerShell-Backup"
+$DesktopFolder = $ENV:USERPROFILE + "\Desktop"
+$StartFolder = $ENV:APPDATA + "\Microsoft\Windows\Start Menu\Programs\PowerShell-Backup"
+[Version]$RunningVersion = '2.0.0'
+[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+$CurrentDate = Get-Date -UFormat "%m-%d-%Y"
 
 
+
+# ======================================================================================================= #
+# ======================================================================================================= #
+#
+# FUNCTIONS
+#
+# ======================================================================================================= #
 
 # Function for simulating the 'pause' command of the Windows command line.
 Function PauseScript {
-	Write-Host "`nPress any key to continue ...`n" -ForegroundColor "Gray"
-	$Wait = $HOST.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
+	If (($PSBoundParameters.Count) -eq 0) {
+		Write-Host "`nPress any key to continue ...`n" -ForegroundColor "Gray"
+		$Wait = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
+	}
 }
 
 
 
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-$SettingsFolder = $ENV:USERPROFILE + "\Backup Script"
-$SettingsFolderCheck = Test-Path $SettingsFolder
-If ((Test-Path "$SettingsFolder") -eq $False) {
-	New-Item -Type directory -Path $SettingsFolder
-}
-
-$BackupListFile = $SettingsFolder + "\backuplist.txt"
-$BackupListFileCheck = Test-Path $BackupListFile
-If ((Test-Path "$BackupListFile") -eq $False) {
-	New-Item -Type file -Path $BackupListFile
+Function DownloadFile {
+	Param(
+		[String]$URLToDownload,
+		[String]$SaveLocation
+	)
+	(New-Object System.Net.WebClient).DownloadFile("$URLToDownload", "$TempFolder\download.tmp")
+	Move-Item -Path "$TempFolder\download.tmp" -Destination "$SaveLocation" -Force
 }
 
 
-$7zipInstallLocation = Get-Content "$SettingsFolder\settings.txt" | Where-Object { $_.Trim() -like "7ZipInstallFolder*" }
-$7ZipInstallLocation = ($7ZipInstallLocation.Substring($7ZipInstallLocation.IndexOf('=') + 1)).Trim()
 
-$Check7ZipInstallSettings = Test-Path "$7ZipInstallLocation\7z.exe"
-$Check7ZipInstallX64 = Test-Path "C:\Program Files\7-Zip\7z.exe"
-$Check7ZipInstallX86 = Test-Path "C:\Program Files (x86)\7-Zip\7z.exe"
-If ($Check7ZipInstallSettings -eq $False -and $Check7ZipInstallX64 -eq $False -and $Check7ZipInstallX86 -eq $False -and (! (Get-Command 7z.exe -ErrorAction SilentlyContinue))) {
-	Write-Host "[ERROR]: Cannot find 7-Zip install location or 7z.exe" -ForegroundColor "Red"
-	Write-Host "         Install 7-Zip or set the 7z.exe install location in the settings.txt file." -ForegroundColor "Red"
-	PauseScript
+Function Download7Zip {
+	DownloadFile "http://www.7-zip.org/a/7za920.zip" "$BinFolder\7za920.zip"
+	
+	Expand-Archive -Path "$BinFolder\7za920.zip" -DestinationPath "$BinFolder\7za920"
+	
+	Copy-Item -Path "$BinFolder\7za920\7za.exe" -Destination "$BinFolder"
+	Remove-Item -Path "$BinFolder\7za920.zip"
+	Remove-Item -Path "$BinFolder\7za920" -Recurse -Force
+}
+
+
+
+Function ScriptInitialization {
+	$Script:BinFolder = $RootFolder + "\bin"
+	If ((Test-Path "$BinFolder") -eq $False) {
+		New-Item -Type Directory -Path "$BinFolder" | Out-Null
+	}
+	$ENV:Path += ";$BinFolder"
+
+	$Script:TempFolder = $RootFolder + "\temp"
+	If ((Test-Path "$TempFolder") -eq $False) {
+		New-Item -Type Directory -Path "$TempFolder" | Out-Null
+	}
+	Else {
+		Remove-Item -Path "$TempFolder\download.tmp" -ErrorAction Silent
+	}
+
+	$Script:ConfigFolder = $RootFolder + "\config"
+	If ((Test-Path "$ConfigFolder") -eq $False) {
+		New-Item -Type Directory -Path "$ConfigFolder" | Out-Null
+	}
+
+	$Script:BackupListFile = $ConfigFolder + "\BackupList.txt"
+	If ((Test-Path "$BackupListFile") -eq $False) {
+		DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/BackupList.txt" "$ConfigFolder\BackupList.txt"
+	}
+}
+
+
+
+Function InstallScript {
+	If ($PSScriptRoot -eq "$InstallLocation") {
+		Write-Host "`nPowerShell-Backup files are already installed."
+		PauseScript
+	}
+	Else {
+		$MenuOption = Read-Host "`nInstall PowerShell-Backup to ""$InstallLocation""? [y/n]"
+		
+		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
+			Write-Host "`nInstalling to ""$InstallLocation"" ..."
+
+			$Script:RootFolder = $InstallLocation
+			ScriptInitialization
+			
+			If ((Test-Path "$StartFolder") -eq $False) {
+				New-Item -Type Directory -Path "$StartFolder" | Out-Null
+			}
+
+			Download7Zip
+
+			Copy-Item "$PSScriptRoot\backup.ps1" -Destination "$RootFolder"
+			
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/PowerShell-Backup.lnk" "$RootFolder\PowerShell-Backup.lnk"
+			Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$DesktopFolder\PowerShell-Backup.lnk"
+			Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$StartFolder\PowerShell-Backup.lnk"
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/LICENSE" "$RootFolder\LICENSE.txt"
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/README.md" "$RootFolder\README.md"
+
+			Write-Host "`nInstallation complete. Please restart the script." -ForegroundColor "Yellow"
+			PauseScript
+			Exit
+		}
+	}
+}
+
+
+
+Function UpdateScript {
+	DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/version-file" "$TempFolder\version-file.txt"
+	[Version]$NewestVersion = Get-Content "$TempFolder\version-file.txt" | Select -Index 0
+	Remove-Item -Path "$TempFolder\version-file.txt"
+	
+	If ($NewestVersion -gt $RunningVersion) {
+		Write-Host "`nA new version of PowerShell-Backup is available: v$NewestVersion" -ForegroundColor "Yellow"
+		$MenuOption = Read-Host "`nUpdate to this version? [y/n]"
+		
+		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
+			DownloadFile "http://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/backup.ps1" "$RootFolder\backup.ps1"
+			
+			If ($PSScriptRoot -eq "$InstallLocation") {
+				If ((Test-Path "$StartFolder") -eq $False) {
+					New-Item -Type Directory -Path "$StartFolder" | Out-Null
+				}
+				
+				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/Youtube-dl.lnk" "$RootFolder\PowerShell-Backup.lnk"
+				Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$DesktopFolder\PowerShell-Backup.lnk"
+				Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$StartFolder\PowerShell-Backup.lnk"
+				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/LICENSE" "$RootFolder\LICENSE.txt"
+				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/README.md" "$RootFolder\README.md"
+			}
+			
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/UpdateNotes.txt" "$TempFolder\UpdateNotes.txt"
+			Get-Content "$TempFolder\UpdateNotes.txt"
+			Remove-Item "$TempFolder\UpdateNotes.txt"
+			
+			Write-Host "`nUpdate complete. Please restart the script." -ForegroundColor "Yellow"
+			
+			PauseScript
+			Exit
+		}
+	}
+	ElseIf ($NewestVersion -eq $RunningVersion) {
+		Write-Host "`nThe running version of PowerShell-Backup is up-to-date." -ForegroundColor "Yellow"
+	}
+	Else {
+		Write-Host "`n[ERROR] Script version mismatch. Re-installing the script is recommended." -ForegroundColor "Red" -BackgroundColor "Black"
+		PauseScript
+	}
+}
+
+
+
+Function BackupFolder {
+	Param (
+		[Parameter(Mandatory)]
+		[String]$Input,
+		[Parameter(Mandatory)]
+		[String]$Output
+	)
+	
+	If ((Test-Path "$Input" -PathType Container) -eq $False) {
+		Write-Host "`n[ERROR] Provided input path does not exist or is not a folder." -ForegroundColor "Red" -BackgroundColor "Black"
+		PauseScript
+		Return
+	}
+	
+	If ((Test-Path "$Output" -PathType Container) -eq $False) {
+		Write-Host "`n[WARNING] The provided output folder of ""$Output"" does not exist."
+		$MenuOption = Read-Host "          Create this folder? [y/n]"
+		
+		If ($MenuOption -like "y" -or $MenuOption -like "yes") {
+			New-Item -Type Directory -Path "$Output" | Out-Null
+		}
+		Else {
+			Write-Host "`n[ERROR] No valid output folder was provided." -ForegroundColor "Red" -BackgroundColor "Black"
+			PauseScript
+			Return
+		}
+	}
+	
+	$InputBottom = $Input.Replace(" ", "_") | Split-Path -Leaf
+	
+	If (($OutputFormat.Trim()) -like "*7z") {
+		$FileFormat = ".7z"
+	}
+	ElseIf (($OutputFormat.Trim()) -like "*gzip") {
+		$FileFormat = ".gzip"
+	}
+	ElseIf (($OutputFormat.Trim()) -like "*tar") {
+		$FileFormat = ".tar"
+	}
+	Else {
+		$FileFormat = ".zip"
+	}
+	
+	Write-Host "`nCompressing folder: ""$Input""`nCompressing to:     ""$Output""`n"
+	
+	$7zipCommand = "7z a ""$Output\$InputBottom_$CurrentDate$FileFormat"" ""$Input\*"""
+	Invoke-Expression "$7zipCommand"
+}
+
+
+
+Function BackupFromFile {
+	Param (
+		[Parameter(Mandatory)]
+		[String]$Input
+	)
+	
+}
+
+
+
+Function CommandLineMode {
+	If ($Install -eq $True) {
+		InstallScript
+		Exit
+	}
+	ElseIf ($UpdateScript -eq $True) {
+		UpdateScript
+		Exit
+	}
+	
+	If (($OutputPath.Length) -gt 0 -and (Test-Path "$OutputPath") -eq $False) {
+		New-Item -Type directory -Path "$OutputPath" | Out-Null
+	}
+	
+	If ($BackupList -eq $True -and ($OutputPath.Length) -gt 0) {
+		Write-Host "`n[ERROR]: The parameter -BackupList can't be used with -InputPath or -OutputPath.`n" -ForegroundColor "Red" -BackgroundColor "Black"
+	}
+	ElseIf ($BackupList -eq $True -and ($InputPath.Length) -gt 0) {
+		BackupFromFile "$InputPath"
+		Write-Host "`nBackups complete." -ForegroundColor "Yellow"
+	}
+	ElseIf ($BackupList -eq $True) {
+		BackupFromFile "$BackupListFile"
+		Write-Host "`nBackups complete." -ForegroundColor "Yellow"
+	}
+	ElseIf (($InputPath.Length) -gt 0 -and ($OutputPath.Length) -gt 0) {
+		BackupFolder "$InputPath" "$OutputPath"
+		Write-Host "`nBackup complete. Backed up to: ""$OutputPath""" -ForegroundColor "Yellow"
+	}
+	ElseIf (($InputPath.Length) -gt 0) {
+		BackupFolder "$InputPath" "$PSScriptRoot"
+		Write-Host "`nBackup complete. Backed up to: ""$PSScriptRoot""" -ForegroundColor "Yellow"
+	}
+	Else {
+		Write-Host "`n[ERROR]: Invalid parameters provided." -ForegroundColor "Red" -BackgroundColor "Black"
+	}
+	
 	Exit
 }
-Else {
-	$ENV:Path += ";C:\Program Files (x86)\7-Zip;C:\Program Files\7-Zip;$7ZipInstallLocation"
-}
-
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
 
 
 
 Function MainMenu {
-	$MenuOption = 99
-	While ($MenuOption -ne 1 -and $MenuOption -ne 0) {
-		Clear-Host
-		Write-Host "`n================================================================"
-		Write-Host "                      Backup Script v1.2.0                      " -ForegroundColor "Yellow"
-		Write-Host "================================================================"
-		Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
-		Write-Host "  1   - Set variables and begin backup process"
-		Write-Host "  2   - Backup folders listed in backuplist.txt"
-		Write-Host "`n  0   - Exit`n" -ForegroundColor "Gray"
-		$MenuOption = Read-Host "Option"
-		Write-Host ""
-		If ($MenuOption -eq 1) {
-			BackupProcess
-			$MenuOption = 99
-		}
-		ElseIf ($MenuOption -eq 2) {
-			BackupFromList
-			$MenuOption = 99
-		}
-		ElseIf ($MenuOption -eq 0) {
-			$HOST.UI.RawUI.BackgroundColor = $BackgroundColorBefore
-			$HOST.UI.RawUI.ForegroundColor = $ForegroundColorBefore
-			Clear-Host
-			Exit
-		}
-		Else {
-			Write-Host "`n[ERROR]: Provided parameter is not a valid URL.`n" -ForegroundColor "Red"
-			PauseScript
-		}
-	}
-}
-
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-
-Function BackupProcess {
-	$MenuOption = 99
-	While ($MenuOption -ne 1 -and $MenuOption -ne 2 -and $MenuOption -ne 3 -and $MenuOption -ne 9 -and $MenuOption -ne 0) {
-		Clear-Host
-		Write-Host "`n================================================================"
-		Write-Host "                         Backup Process                         " -ForegroundColor "Yellow"
-		Write-Host "================================================================"
-		Write-Host "`nPlease select a varible to edit using its corresponding ID:`n" -ForegroundColor "Yellow"
-		Write-Host ($Settings | Format-Table ID,SettingName,BlankCol,SettingValue | Out-String)
-		Write-Host "  9   - Begin backup process"
-		Write-Host "`n  0   - Return`n" -ForegroundColor "Gray"
-		$MenuOption = Read-Host "Option"
-		Write-Host ""
-		
-		If ($MenuOption -eq 1) {
-			Write-Host "Enter the full path of the folder you wish to backup:`n" -ForegroundColor "Yellow"
-			$Script:InputPath = Read-Host "Input path"
-			If ($InputPath -like "*\") {
-				$Script:InputPath = $InputPath.Substring(0, $InputPath.Length - 1)
-			}
-			
-			$DateVar = Get-Date -UFormat "%m-%d-%Y_%H.%M"
-			$Script:ZipFileName = $InputPath.Substring($InputPath.LastIndexOf('\') + 1) + "_$DateVar.zip"
-			$InputPathObj.SettingValue = $InputPath
-			$ZipFileNameObj.SettingValue = $ZipFileName
-			$MenuOption = 99
-		}
-		ElseIf ($MenuOption -eq 2) {
-			Write-Host "Enter the full path of the location to save the backup to:`n" -ForegroundColor "Yellow"
-			$Script:OutputPath = Read-Host "Output path"
-			If ($OutputPath -like "*\"){
-				$Script:OutputPath = $OutputPath.Substring(0, $OutputPath.Length - 1)
-			}
-			
-			$OutputPathObj.SettingValue = $OutputPath
-			$MenuOption = 99
-		}
-		ElseIf ($MenuOption -eq 3) {
-			Write-Host "Enter the compressed backup filename:`n" -ForegroundColor "Yellow"
-			$Script:ZipFileName = Read-Host "Compressed backup filename"
-			$ZipFileNameObj.SettingValue = $ZipFileName
-			$MenuOption = 99
-		}
-		ElseIf ($MenuOption -eq 9) {
-			CompressBackup
-			EndMenu
-			Return
-		}
-		ElseIf ($MenuOption -eq 0) {
-			Return
-		}
-		Else {
-			Write-Host "`n[ERROR]: Provided parameter is not a valid URL.`n" -ForegroundColor "Red"
-			PauseScript
-		}
-	}
-}
-
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-
-Function CompressBackup {
-	Write-Host "Compressing backup to: ""$OutputPath\$ZipFileName""" -ForegroundColor "Yellow"
-	$7zipCommand = "7z a ""$OutputPath" + "\$ZipFileName"" ""$InputPath" + "\*"""
-	Invoke-Expression $7zipCommand
-	Write-Host "`nFinished compressing backup to: ""$OutputPath\$ZipFileName""`n" -ForegroundColor "Yellow"
-}
-
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-
-Function BackupFromList {
-	$TextFile = Get-Content $BackupListFile
-	$Script:OutputPath = ($TextFile[0]).Trim()
-	If ($OutputPath -like "*\"){
-		$Script:OutputPath = $OutputPath.Substring(0, $OutputPath.Length - 1)
-	}
 	
-	If ($ParameterMode -eq $False) {
-		$MenuOption = 99
-		While ($MenuOption -ne 1 -and $MenuOption -ne 2) {
-			Clear-Host
-			Write-Host "Backing up folders listed in:  ""$BackupListFile""" -ForegroundColor "Yellow"
-			Write-Host "Backing up to:  ""$OutputPath""`n" -ForegroundColor "Yellow"
-			Write-Host "Is this correct?`n" -ForegroundColor "Yellow"
-			Write-Host "  1   - Yes"
-			Write-Host "  2   - No`n"
-			$MenuOption = Read-Host "Option"
-			Write-Host ""
-			
-			If ($MenuOption -eq 1) {
-				$TextFile = $TextFile | Where-Object {$_ -ne $TextFile[0]}
-				$TextFile | ForEach-Object {
-					$Script:InputPath = $_
-					$DateVar = Get-Date -UFormat "%m-%d-%Y_%H.%M"
-					$Script:ZipFileName = $InputPath.Substring($InputPath.LastIndexOf('\') + 1) + "_$DateVar.zip"
-					CompressBackup
-				}
-				Write-Host "Finished backing up folders listed in: ""$BackupListFile""`n" -ForegroundColor "Yellow"
-				EndMenu
-				Return
-			}
-			ElseIf ($MenuOption -eq 2) {
-				$Script:OutputPath = "E:\Backups"
-				Return
-			}
-			Else {
-				Write-Host "`n[ERROR]: Provided parameter is not a valid URL.`n" -ForegroundColor "Red"
-				PauseScript
-			}
-		}
-	}
-	Else {
-		Write-Host "Backing up folders listed in: ""$BackupListFile""" -ForegroundColor "Yellow"
-		Write-Host "Backing up to:                ""$OutputPath""`n" -ForegroundColor "Yellow"
-		$TextFile = $TextFile | Where-Object {$_ -ne $TextFile[0]}
-		$TextFile | ForEach-Object {
-			$Script:InputPath = $_
-			$DateVar = Get-Date -UFormat "%m-%d-%Y_%H.%M"
-			$Script:ZipFileName = $InputPath.Substring($InputPath.LastIndexOf('\') + 1) + "_$DateVar.zip"
-			CompressBackup
-		}
-		Write-Host "Finished backing up folders listed in: ""$BackupListFile""`n" -ForegroundColor "Yellow"
-	}
 }
 
 
 
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-
-Function EndMenu {
-	Else {
-		$MenuOption = 99
-		While ($MenuOption -ne 1 -and $MenuOption -ne 2) {
-			Write-Host "`n================================================================"
-			Write-Host "                        Script Complete                         " -ForegroundColor "Yellow"
-			Write-Host "================================================================"
-			Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
-			Write-Host "  1   - Run again"
-			Write-Host "`n  0   - Exit`n"
-			$MenuOption = Read-Host "Option"
-			Write-Host ""
-			If ($MenuOption -eq 1) {
-				$Script:InputPath = $ENV:USERPROFILE + "\Documents"
-				$Script:OutputPath = "E:\Backups"
-				$Script:DateVar = Get-Date -UFormat "%m-%d-%Y_%H.%M"
-				$Script:ZipFileName = "Documents_$DateVar.zip"
-				
-				$InputPathObj.SettingValue = $InputPath
-				$OutputPathObj.SettingValue = $OutputPath
-				$ZipFileNameObj.SettingValue = $ZipFileName
-				
-				Return
-			}
-			ElseIf ($MenuOption -eq 2) {
-				$HOST.UI.RawUI.BackgroundColor = $BackgroundColorBefore
-				$HOST.UI.RawUI.ForegroundColor = $ForegroundColorBefore
-				Clear-Host
-				Exit
-			}
-			Else {
-				Write-Host "Please enter a valid option." -ForegroundColor "Red" -BackgroundColor "Black"
-				Write-Host ""
-				PauseScript
-				Write-Host ""
-			}
-		}
-	}
-}
-
-
-
-# ======================================================================================================= #
-# ======================================================================================================= #
-
-
-Function CommandLineMode {
+Function SettingsMenu {
 	
-	If ($BackupList -eq $True) {
-		BackupFromList
-	}
-	Else {
-		If ($InputPath.Length -gt 0) {
-			If ($InputPath -like "*\") {
-				$Script:InputPath = $InputPath.Substring(0, $InputPath.Length - 1)
-			}
-			
-			$DateVar = Get-Date -UFormat "%m-%d-%Y_%H.%M"
-			$Script:ZipFileName = $InputPath.Substring($InputPath.LastIndexOf('\') + 1) + "_$DateVar.zip"
-		}
-		Else {
-			Write-Host "[ERROR] Input path not specified." -ForegroundColor "Red"
-			Write-Host "        Please specify the folder to backup with: -InputPath <Folder Path>" -ForegroundColor "Red"
-			PauseScript
-			Exit
-		}
-		
-		If ($OutputPath.Length -gt 0) {
-			If ($OutputPath -like "*\"){
-				$Script:OutputPath = $OutputPath.Substring(0, $OutputPath.Length - 1)
-			}
-			
-			CompressBackup
-		}
-		Else {			
-			Write-Host "[ERROR] Output path not specified." -ForegroundColor "Red"
-			Write-Host "        Please specify the location to backup to: -OutputPath <Folder Path>" -ForegroundColor "Red"
-			PauseScript
-			Exit
-		}
-	}
 }
 
 
-
 # ======================================================================================================= #
 # ======================================================================================================= #
+#
+# MAIN
+#
+# ======================================================================================================= #
 
+If ($PSVersionTable.PSVersion.Major -lt 5) {
+	Write-Host "[ERROR]: Your PowerShell installation is not version 5.0 or greater.`n        This script requires PowerShell version 5.0 or greater to function.`n        You can download PowerShell version 5.0 at:`n            https://www.microsoft.com/en-us/download/details.aspx?id=50395" -ForegroundColor "Red" -BackgroundColor "Black"
+	PauseScript
+	Exit
+}
 
-
-If ($PSBoundParameters.Count -gt 0) {
-	$ParameterMode = $True
+If ($PSScriptRoot -eq "$InstallLocation") {
+	$RootFolder = $InstallLocation
 }
 Else {
-	$ParameterMode = $False
-	$InputPath = $ENV:USERPROFILE + "\Documents"
-	$OutputPath = "E:\Backups"
-	$DateVar = Get-Date -UFormat "%m-%d-%Y_%H.%M"
-	$ZipFileName = "Documents_$DateVar.zip"
-	
-	$InputPathObj = New-Object Object
-	$InputPathObj | Add-Member -Type NoteProperty -Name ID -Value 1
-	$InputPathObj | Add-Member -Type NoteProperty -Name SettingName -Value "Input path"
-	$InputPathObj | Add-Member -Type NoteProperty -Name BlankCol -Value ""
-	$InputPathObj | Add-Member -Type NoteProperty -Name SettingValue -Value $InputPath
-	
-	$OutputPathObj = New-Object Object
-	$OutputPathObj | Add-Member -Type NoteProperty -Name ID -Value 2
-	$OutputPathObj | Add-Member -Type NoteProperty -Name SettingName -Value "Output path"
-	$OutputPathObj | Add-Member -Type NoteProperty -Name BlankCol -Value ""
-	$OutputPathObj | Add-Member -Type NoteProperty -Name SettingValue -Value $OutputPath
-	
-	$ZipFileNameObj = New-Object Object
-	$ZipFileNameObj | Add-Member -Type NoteProperty -Name ID -Value 3
-	$ZipFileNameObj | Add-Member -Type NoteProperty -Name SettingName -Value "Backup name"
-	$ZipFileNameObj | Add-Member -Type NoteProperty -Name BlankCol -Value ""
-	$ZipFileNameObj | Add-Member -Type NoteProperty -Name SettingValue -Value $ZipFileName
-	
-	$Settings = $InputPathObj,$OutputPathObj,$ZipFileNameObj
-	
-	$BackgroundColorBefore = $HOST.UI.RawUI.BackgroundColor
-	$ForegroundColorBefore = $HOST.UI.RawUI.ForegroundColor
-	$HOST.UI.RawUI.BackgroundColor = "Black"
-	$HOST.UI.RawUI.ForegroundColor = "White"
-	
+	$RootFolder = "$PSScriptRoot"
+}
+
+If ($Install -eq $False) {
+	ScriptInitialization
+}
+
+If ($CheckForUpdates -eq $True -and $Install -eq $False) {
+	UpdateScript
+}
+
+If ((Test-Path "$BinFolder\7za.exe") -eq $False -and $Install -eq $False) {
+	Write-Host "`n7-Zip .exe not found. Downloading and installing to: ""$BinFolder"" ...`n" -ForegroundColor "Yellow"
+	Download7Zip
+}
+
+If (($PSBoundParameters.Count) -gt 0) {
+	CommandLineMode
+}
+Else {
 	MainMenu
 }
+
+
+Write-Host "End of Script"
+PauseScript
+
+
+# ======================================================================================================= #
+# ======================================================================================================= #
+
+
+
+
+
 
