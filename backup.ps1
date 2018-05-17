@@ -9,26 +9,41 @@
 	Specify the folder that is to be backed up.
 .PARAMETER OutputPath 
 	Specify the folder to which the backup will be saved.
+.PARAMETER OutputFormat
+	Specify the archive file format to compress the backup to. Supported formats are .7z, .gzip, .tar, and .zip. The default is .zip
 .PARAMETER BackupList
-	Backup folders listed in the backuplist.txt file. The first line is the folder to which the backups will be saved.
+	Backup folders listed in the backuplist.txt file.
+.PARAMETER Install
+	Install the script to "C:\Users\%USERNAME%\Scripts\PowerShell-Backup" and create desktop and Start Menu shortcuts.
+.PARAMETER UpdateScript
+	Update the backup.ps1 script file to the most recent version.
 
 .EXAMPLE
 	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1
 	Runs the script in GUI mode.
 .EXAMPLE
-	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -InputPath "C:\Users\mpb10\Documents" -OutputPath "E:\Backups"
-	Backups the user mpb10's Documents folder to "E:\Backups".
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -InputPath "C:\Users\mpb10\Documents" -OutputPath "E:\Backups" -OutputFormat ".7z"
+	Backups the Documents folder to "E:\Backups" compressed to the .7z format.
 .EXAMPLE
-	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -BackupList -OutputPath "E:\Backups"
-	Backs up the folders listed in "C:\Users\%USERNAME%\Scripts\Backup-Script\config\backuplist.txt" to "E:\Backups".
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -BackupList
+	Backs up the folders listed in "C:\Users\%USERNAME%\Scripts\PowerShell-Backup\config\BackupList.txt"
+.EXAMPLE
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -BackupList -InputPath "C:\TestFolder\BackupList.txt"
+	Backs up the folders listed in "C:\TestFolder\BackupList.txt".
+.EXAMPLE
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -Install
+	Installs the script to "C:\Users\%USERNAME%\Scripts\PowerShell-Backup" and creates desktop and Start Menu shortcuts.
+.EXAMPLE
+	C:\Users\%USERNAME%\Scripts\Backup-Script\scripts\backup.ps1 -UpdateScript
+	Updates the backup.ps1 script file to the most recent version.
 
 .NOTES
-	Requires Windows 7 or higher and PowerShell version 5.0 or greater.
+	Requires PowerShell version 5.0 or greater.
 	Author: mpb10
-	Updated: May 9th, 2018
+	Updated: May 16th, 2018
 	Version: 2.0.0
 .LINK 
-	https://github.com/mpb10/PowerShell-Backup-Script
+	https://github.com/mpb10/PowerShell-Backup
 #>
 
 # ======================================================================================================= #
@@ -84,7 +99,7 @@ $BackupFromFileStatus = $True
 
 # Function for simulating the 'pause' command of the Windows command line.
 Function PauseScript {
-	If ((($PSBoundParameters).Count).ToInt32 -eq 0) {
+	If ($PSBoundParameters.Count -eq 0) {
 		Write-Host "`nPress any key to continue ...`n" -ForegroundColor "Gray"
 		$Wait = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
 	}
@@ -290,6 +305,7 @@ Function BackupFolder {
 	Else {
 		Invoke-Expression "$7ZipCommand" | Out-Null
 	}
+	PauseScript
 }
 
 
@@ -391,7 +407,59 @@ Function CommandLineMode {
 
 
 Function MainMenu {
-	
+	$MenuOption = 99
+	While ($MenuOption -ne 1 -and $MenuOption -ne 2 -and $MenuOption -ne 3 -and $MenuOption -ne 0) {
+		$URL = ""
+		Clear-Host
+		Write-Host "==================================================================================================="
+		Write-Host "                                PowerShell-Backup v$RunningVersion                                 " -ForegroundColor "Yellow"
+		Write-Host "==================================================================================================="
+		Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
+		Write-Host "  1   - Backup specific folder"
+		Write-Host "  2   - Backup from list"
+		Write-Host "  3   - Settings"
+		Write-Host "`n  0   - Exit`n" -ForegroundColor "Gray"
+		$MenuOption = Read-Host "Option"
+		
+		Write-Host "`n==================================================================================================="
+		
+		Switch ($MenuOption) {
+			1 {
+				Write-Host "`nPlease enter the full path of the folder you wish to backup:`n" -ForegroundColor "Yellow"
+				$InputPath = (Read-Host "Input Path").Trim()
+				Write-Host "`n---------------------------------------------------------------------------------------------------"
+				Write-Host "`nPlease enter the full path of the location you wish to save the backup:`n" -ForegroundColor "Yellow"
+				$OutputPath = (Read-Host "Output Path").Trim()
+				Write-Host "`n---------------------------------------------------------------------------------------------------"
+				Write-Host "`n[Optional] Enter the archive file format you wish to compress the backup to:`n"
+				$OutputFormat = (Read-Host "File Format").Trim()
+				Write-Host "`n---------------------------------------------------------------------------------------------------"
+				
+				BackupFolder "$InputPath" "$OutputPath"
+				PauseScript
+				
+				$MenuOption = 99
+			}
+			2 {
+				
+				
+				$MenuOption = 99
+			}
+			3 {
+				
+				
+				$MenuOption = 99
+			}
+			0 {
+				Clear-Host
+				Exit
+			}
+			Default {
+				Write-Host "`nPlease enter a valid option." -ForegroundColor "Red"
+				PauseScript
+			}
+		}
+	}
 }
 
 
