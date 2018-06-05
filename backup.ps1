@@ -251,7 +251,6 @@ Function BackupFolder {
 	
 	If ((Test-Path "$InputFolder" -PathType Container) -eq $False) {
 		Write-Host "`n[ERROR] Provided input path does not exist or is not a folder." -ForegroundColor "Red" -BackgroundColor "Black"
-		PauseScript
 		$Script:BackupFolderStatus = $False
 		Return
 	}
@@ -265,7 +264,6 @@ Function BackupFolder {
 		}
 		Else {
 			Write-Host "`n[ERROR] No valid output folder was provided." -ForegroundColor "Red" -BackgroundColor "Black"
-			PauseScript
 			$Script:BackupFolderStatus = $False
 			Return
 		}
@@ -300,12 +298,13 @@ Function BackupFolder {
 	Write-Verbose "7-Zip command: $7zipCommand"
 	
 	If ($Verbose7Zip -eq $True) {
-		Invoke-Expression "$7ZipCommand"
+		Invoke-Expression "$7ZipCommand" | Tee-Object "$TempFolder\powershell-backup_log.log" -Append
 	}
 	Else {
-		Invoke-Expression "$7ZipCommand" | Out-Null
+		Invoke-Expression "$7ZipCommand" | Out-File "$TempFolder\powershell-backup_log.log" -Append
 	}
-	PauseScript
+	
+	Write-Host "`nCompression to ""$OutputFileName"" complete." -ForegroundColor "Yellow"
 }
 
 
@@ -319,7 +318,6 @@ Function BackupFromFile {
 	
 	If ((Test-Path "$InputFile") -eq $False) {
 		Write-Host "`n[ERROR] Provided input file does not exist." -ForegroundColor "Red" -BackgroundColor "Black"
-		PauseScript
 		$Script:BackupFromFileStatus = $False
 		Return
 	}
@@ -331,7 +329,6 @@ Function BackupFromFile {
 	
 	If ($BackupToArray.Count -eq 1) {
 		Write-Host "`n[ERROR] No output folder paths listed under '[Backup To]'." -ForegroundColor "Red" -BackgroundColor "Black"
-		PauseScript
 		$Script:BackupFromFileStatus = $False
 		Return
 	}
@@ -352,10 +349,11 @@ Function BackupFromFile {
 	}
 	Else {
 		Write-Host "`n[ERROR] No input folder paths listed under '[Backup From]'." -ForegroundColor "Red" -BackgroundColor "Black"
-		PauseScript
 		$Script:BackupFromFileStatus = $False
 		Return
 	}
+	
+	Write-Host "`nBatch job complete." -ForegroundColor "Yellow"
 }
 
 
@@ -436,17 +434,18 @@ Function MainMenu {
 				Write-Host "`n---------------------------------------------------------------------------------------------------"
 				
 				BackupFolder "$InputPath" "$OutputPath"
-				PauseScript
 				
+				PauseScript
 				$MenuOption = 99
 			}
 			2 {
+				BackupFromFile "$BackupListFile"
 				
-				
+				PauseScript
 				$MenuOption = 99
 			}
 			3 {
-				
+				SettingsMenu
 				
 				$MenuOption = 99
 			}
@@ -497,6 +496,12 @@ If ($CheckForUpdates -eq $True -and $Install -eq $False) {
 	UpdateScript
 }
 
+If ((Test-Path "$TempFolder\powershell-backup_log.log") -eq $True) {
+	If ((Get-ChildItem "$TempFolder\powershell-backup_log.log").Length -gt 25000000) {
+		Remove-Item -Path "$TempFolder\powershell-backup_log.log"
+	}
+}
+
 If ((Test-Path "$BinFolder\7za.exe") -eq $False -and $Install -eq $False) {
 	Write-Host "`n7-Zip .exe not found. Downloading and installing to: ""$BinFolder"" ...`n" -ForegroundColor "Yellow"
 	Download7Zip
@@ -508,7 +513,6 @@ If (($PSBoundParameters.Count) -gt 0) {
 Else {
 	MainMenu
 }
-
 
 Write-Host "End of Script"
 PauseScript
