@@ -161,7 +161,6 @@ Function ScriptInitialization {
 Function InstallScript {
 	If ($PSScriptRoot -eq "$InstallLocation") {
 		Write-Host "`nPowerShell-Backup files are already installed."
-		PauseScript
 	}
 	Else {
 		$MenuOption = Read-Host "`nInstall PowerShell-Backup to ""$InstallLocation""? [y/n]"
@@ -187,7 +186,6 @@ Function InstallScript {
 			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/README.md" "$RootFolder\README.md"
 
 			Write-Host "`nInstallation complete. Please restart the script." -ForegroundColor "Yellow"
-			PauseScript
 			Exit
 		}
 	}
@@ -225,7 +223,6 @@ Function UpdateScript {
 			
 			Write-Host "`nUpdate complete. Please restart the script." -ForegroundColor "Yellow"
 			
-			PauseScript
 			Exit
 		}
 	}
@@ -234,7 +231,6 @@ Function UpdateScript {
 	}
 	Else {
 		Write-Host "`n[ERROR] Script version mismatch. Re-installing the script is recommended." -ForegroundColor "Red" -BackgroundColor "Black"
-		PauseScript
 	}
 }
 
@@ -407,11 +403,10 @@ Function CommandLineMode {
 Function MainMenu {
 	$MenuOption = 99
 	While ($MenuOption -ne 1 -and $MenuOption -ne 2 -and $MenuOption -ne 3 -and $MenuOption -ne 0) {
-		$URL = ""
 		Clear-Host
-		Write-Host "==================================================================================================="
-		Write-Host "                                PowerShell-Backup v$RunningVersion                                 " -ForegroundColor "Yellow"
-		Write-Host "==================================================================================================="
+		Write-Host "=========================================================================================="
+		Write-Host "                            PowerShell-Backup v$RunningVersion                            " -ForegroundColor "Yellow"
+		Write-Host "=========================================================================================="
 		Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
 		Write-Host "  1   - Backup specific folder"
 		Write-Host "  2   - Backup from list"
@@ -464,7 +459,44 @@ Function MainMenu {
 
 
 Function SettingsMenu {
-	
+	$MenuOption = 99
+	While ($MenuOption -ne 1 -and $MenuOption -ne 2 -and $MenuOption -ne 0) {
+		Clear-Host
+		Write-Host "=========================================================================================="
+		Write-Host "                                      Settings Menu                                       " -ForegroundColor "Yellow"
+		Write-Host "=========================================================================================="
+		Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
+		Write-Host "  1   - Update backup.ps1 script file"
+		If ($PSScriptRoot -ne "$InstallLocation") {
+			Write-Host "  2   - Install script to: ""$InstallLocation"""
+		}
+		Write-Host "`n  0   - Return to Main Menu`n" -ForegroundColor "Gray"
+		$MenuOption = Read-Host "Option"
+		
+		Write-Host "`n==================================================================================================="
+		
+		Switch ($MenuOption) {
+			1 {
+				UpdateScript
+				
+				PauseScript
+				$MenuOption = 99
+			}
+			2 {
+				InstallScript
+				
+				PauseScript
+				$MenuOption = 99
+			}
+			0 {
+				Return
+			}
+			Default {
+				Write-Host "`nPlease enter a valid option." -ForegroundColor "Red"
+				PauseScript
+			}
+		}
+	}
 }
 
 
