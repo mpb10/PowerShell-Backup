@@ -186,6 +186,7 @@ Function InstallScript {
 			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/README.md" "$RootFolder\README.md"
 
 			Write-Host "`nInstallation complete. Please restart the script." -ForegroundColor "Yellow"
+			PauseScript
 			Exit
 		}
 	}
@@ -222,7 +223,7 @@ Function UpdateScript {
 			Remove-Item "$TempFolder\UpdateNotes.txt"
 			
 			Write-Host "`nUpdate complete. Please restart the script." -ForegroundColor "Yellow"
-			
+			PauseScript
 			Exit
 		}
 	}
@@ -404,9 +405,9 @@ Function MainMenu {
 	$MenuOption = 99
 	While ($MenuOption -ne 1 -and $MenuOption -ne 2 -and $MenuOption -ne 3 -and $MenuOption -ne 0) {
 		Clear-Host
-		Write-Host "=========================================================================================="
-		Write-Host "                            PowerShell-Backup v$RunningVersion                            " -ForegroundColor "Yellow"
-		Write-Host "=========================================================================================="
+		Write-Host "==================================================================================================="
+		Write-Host "                                PowerShell-Backup v$RunningVersion                                 " -ForegroundColor "Yellow"
+		Write-Host "==================================================================================================="
 		Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
 		Write-Host "  1   - Backup specific folder"
 		Write-Host "  2   - Backup from list"
@@ -421,7 +422,7 @@ Function MainMenu {
 				Write-Host "`nPlease enter the full path of the folder you wish to backup:`n" -ForegroundColor "Yellow"
 				$InputPath = (Read-Host "Input Path").Trim()
 				Write-Host "`n---------------------------------------------------------------------------------------------------"
-				Write-Host "`nPlease enter the full path of the location you wish to save the backup:`n" -ForegroundColor "Yellow"
+				Write-Host "`nPlease enter the full path of the folder you wish to save the backup:`n" -ForegroundColor "Yellow"
 				$OutputPath = (Read-Host "Output Path").Trim()
 				Write-Host "`n---------------------------------------------------------------------------------------------------"
 				Write-Host "`n[Optional] Enter the archive file format you wish to compress the backup to:`n"
@@ -462,9 +463,9 @@ Function SettingsMenu {
 	$MenuOption = 99
 	While ($MenuOption -ne 1 -and $MenuOption -ne 2 -and $MenuOption -ne 0) {
 		Clear-Host
-		Write-Host "=========================================================================================="
-		Write-Host "                                      Settings Menu                                       " -ForegroundColor "Yellow"
-		Write-Host "=========================================================================================="
+		Write-Host "==================================================================================================="
+		Write-Host "                                           Settings Menu                                           " -ForegroundColor "Yellow"
+		Write-Host "==================================================================================================="
 		Write-Host "`nPlease select an option:`n" -ForegroundColor "Yellow"
 		Write-Host "  1   - Update backup.ps1 script file"
 		If ($PSScriptRoot -ne "$InstallLocation") {
