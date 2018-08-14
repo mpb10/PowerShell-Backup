@@ -40,7 +40,7 @@
 .NOTES
 	Requires PowerShell version 5.0 or greater.
 	Author: mpb10
-	Updated: May 16th, 2018
+	Updated: August 13th, 2018
 	Version: 2.0.0
 .LINK 
 	https://github.com/mpb10/PowerShell-Backup
@@ -99,7 +99,7 @@ $BackupFromFileStatus = $True
 
 # Function for simulating the 'pause' command of the Windows command line.
 Function PauseScript {
-	If ($PSBoundParameters.Count -eq 0) {
+	If ($CommandLine -eq $False) {
 		Write-Host "`nPress any key to continue ...`n" -ForegroundColor "Gray"
 		$Wait = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
 	}
@@ -152,7 +152,7 @@ Function ScriptInitialization {
 
 	$Script:BackupListFile = $ConfigFolder + "\BackupList.txt"
 	If ((Test-Path "$BackupListFile") -eq $False) {
-		DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/BackupList.txt" "$ConfigFolder\BackupList.txt"
+		DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/install/files/BackupList.txt" "$ConfigFolder\BackupList.txt"
 	}
 }
 
@@ -179,11 +179,11 @@ Function InstallScript {
 
 			Copy-Item "$PSScriptRoot\backup.ps1" -Destination "$RootFolder"
 			
-			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/PowerShell-Backup.lnk" "$RootFolder\PowerShell-Backup.lnk"
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/install/files/PowerShell-Backup.lnk" "$RootFolder\PowerShell-Backup.lnk"
 			Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$DesktopFolder\PowerShell-Backup.lnk"
 			Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$StartFolder\PowerShell-Backup.lnk"
-			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/LICENSE" "$RootFolder\LICENSE.txt"
-			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/README.md" "$RootFolder\README.md"
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/LICENSE" "$RootFolder\LICENSE.txt"
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/README.md" "$RootFolder\README.md"
 
 			Write-Host "`nInstallation complete. Please restart the script." -ForegroundColor "Yellow"
 			PauseScript
@@ -195,7 +195,7 @@ Function InstallScript {
 
 
 Function UpdateScript {
-	DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/version-file" "$TempFolder\version-file.txt"
+	DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/install/files/version-file" "$TempFolder\version-file.txt"
 	[Version]$NewestVersion = Get-Content "$TempFolder\version-file.txt" | Select -Index 0
 	Remove-Item -Path "$TempFolder\version-file.txt"
 	
@@ -204,21 +204,21 @@ Function UpdateScript {
 		$MenuOption = Read-Host "`nUpdate to this version? [y/n]"
 		
 		If ($MenuOption.Trim() -like "y" -or $MenuOption.Trim() -like "yes") {
-			DownloadFile "http://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/backup.ps1" "$RootFolder\backup.ps1"
+			DownloadFile "http://github.com/mpb10/PowerShell-Backup/raw/master/backup.ps1" "$RootFolder\backup.ps1"
 			
 			If ($PSScriptRoot -eq "$InstallLocation") {
 				If ((Test-Path "$StartFolder") -eq $False) {
 					New-Item -Type Directory -Path "$StartFolder" | Out-Null
 				}
 				
-				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/Youtube-dl.lnk" "$RootFolder\PowerShell-Backup.lnk"
+				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/install/files/Youtube-dl.lnk" "$RootFolder\PowerShell-Backup.lnk"
 				Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$DesktopFolder\PowerShell-Backup.lnk"
 				Copy-Item "$RootFolder\PowerShell-Backup.lnk" -Destination "$StartFolder\PowerShell-Backup.lnk"
-				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/LICENSE" "$RootFolder\LICENSE.txt"
-				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/README.md" "$RootFolder\README.md"
+				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/LICENSE" "$RootFolder\LICENSE.txt"
+				DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/README.md" "$RootFolder\README.md"
 			}
 			
-			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/version-2.0.0/install/files/UpdateNotes.txt" "$TempFolder\UpdateNotes.txt"
+			DownloadFile "https://github.com/mpb10/PowerShell-Backup/raw/master/install/files/UpdateNotes.txt" "$TempFolder\UpdateNotes.txt"
 			Get-Content "$TempFolder\UpdateNotes.txt"
 			Remove-Item "$TempFolder\UpdateNotes.txt"
 			
@@ -531,7 +531,7 @@ If ($CheckForUpdates -eq $True -and $Install -eq $False) {
 
 If ((Test-Path "$TempFolder\powershell-backup_log.log") -eq $True) {
 	If ((Get-ChildItem "$TempFolder\powershell-backup_log.log").Length -gt 25000000) {
-		Remove-Item -Path "$TempFolder\powershell-backup_log.log"
+		Get-Content "$TempFolder\powershell-backup_log.log" | Select-Object -Skip 50000 | Out-File "$TempFolder\powershell-backup_log.log"
 	}
 }
 
@@ -541,14 +541,14 @@ If ((Test-Path "$BinFolder\7za.exe") -eq $False -and $Install -eq $False) {
 }
 
 If (($PSBoundParameters.Count) -gt 0) {
+	$CommandLine = $True
 	CommandLineMode
 }
 Else {
+	$CommandLine = $False
 	MainMenu
 }
 
-Write-Host "End of Script"
-PauseScript
 Exit
 
 

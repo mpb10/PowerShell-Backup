@@ -6,5 +6,7 @@
  1.  Re-wrote the script in the likeness of PowerShell-Youtube-dl. Cleaned up code.
 
  2.  Can backup individual folders or use the BackupList.txt file to run batch jobs.
+ 
+ 3.  Implemented some logging to the temp folder.
 
 ===================================================================================================
