@@ -1,2 +1,0 @@
-[settings]
-7ZipInstallFolder=C:\Program Files\7-zip\7z.exe
